@@ -7,12 +7,12 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 using System.Buffers.Writer;
 using System.IO.Pipelines;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Http.Formatter;
 using System.Text.Http.Parser;
 
@@ -48,7 +48,8 @@ namespace io.pipes
             {
                 var pipeHttpClient = new PipeHttpClient(clientSocketPipe);
 
-                var request = new GetFileRequest($"v3/enrollments/{enrollmentNumber}/usagedetails/download?billingPeriod=201902", accessToken);
+                // var request = new GetFileRequest($"v3/enrollments/{enrollmentNumber}/usagedetails/download?billingPeriod=201902", accessToken);
+                var request = new GetFileRequest($"v3/enrollments/{enrollmentNumber}/billingPeriods", accessToken);
 
                 try
                 {
@@ -425,7 +426,7 @@ namespace io.pipes
         protected virtual void WriteOtherHeaders(ref BufferWriter writer, ref T arguments)
         {
             writer.WriteHeader("Content-Length", arguments.ContentLength);
-            writer.WriteHeader("Host", arguments.Client.Host);
+            // writer.WriteHeader("Host", arguments.Client.Host);
         }
 
         static readonly byte[] s_GETu8 = Encoding.ASCII.GetBytes("GET");
@@ -505,7 +506,7 @@ namespace io.pipes
                 ReadResult result = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = result.Buffer;
                 // TODO (pri 2): this should not be static, or ParseHeaders should be static
-                if (HttpParser.ParseResponseLine(ref handler, ref buffer, out int rlConsumed))
+                if (s_headersParser.ParseHeaders(handler, buffer, out int rlConsumed))
                 {
                     reader.AdvanceTo(buffer.GetPosition(rlConsumed));
                     break;
@@ -517,7 +518,7 @@ namespace io.pipes
             {
                 ReadResult result = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = result.Buffer;
-                if (s_headersParser.ParseHeaders(ref handler, buffer, out int hdConsumed))
+                if (s_headersParser.ParseHeaders(handler, buffer, out int hdConsumed))
                 {
                     reader.AdvanceTo(buffer.GetPosition(hdConsumed));
                     break;
